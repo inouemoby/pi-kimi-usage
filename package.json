@@ -1,0 +1,17 @@
+{
+  "name": "kimi-usage",
+  "version": "1.0.0",
+  "description": "Kimi (Moonshot AI) membership / Kimi Code usage monitor for pi coding agent. Shows 5h window & weekly quota in footer.",
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-tui": "*"
+  }
+}
