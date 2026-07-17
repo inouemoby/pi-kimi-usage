@@ -156,7 +156,13 @@ export default function (pi: ExtensionAPI) {
     const p = ctx.model?.provider?.toLowerCase() ?? "";
     return p.includes("kimi") || p.includes("moonshot");
   }
-  function trigger() { if (_tui) setTimeout(() => _tui.requestRender?.(), 0); }
+  function trigger() {
+    // Re-check _tui inside the callback: footer may be disposed (setting _tui = null)
+    // between scheduling and execution. `?.` on _tui itself prevents the null deref.
+    setTimeout(() => {
+      try { _tui?.requestRender?.(); } catch { /* footer disposed */ }
+    }, 0);
+  }
 
   // ── Refresh ─────────────────────────────────────────────────
   async function refresh(ctx: any) {
