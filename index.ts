@@ -340,12 +340,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "kimi_usage",
     label: "Kimi Usage",
-    description: "Check Kimi (Moonshot AI) membership / Kimi Code subscription usage: 5-hour window, weekly quota with reset times, and monthly total usage.",
-    promptSnippet: "Check Kimi membership usage (5h window, weekly & monthly quota)",
-    promptGuidelines: [
-      "Use kimi_usage to check Kimi membership quota before expensive operations.",
-      "Use kimi_usage when the user asks about Kimi usage, limits, membership quota, or remaining credits.",
-    ],
+    description: "Get current Kimi usage.",
     parameters: Type.Object({}),
     async execute() {
       try {
