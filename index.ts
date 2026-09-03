@@ -1,7 +1,6 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { Type } from "typebox";
 import { resolve } from "path";
 import { existsSync, readFileSync } from "fs";
 
@@ -336,45 +335,4 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  // ── kimi_usage tool ─────────────────────────────────────
-  pi.registerTool({
-    name: "kimi_usage",
-    label: "Kimi Usage",
-    description: "Get current Kimi usage.",
-    parameters: Type.Object({}),
-    async execute() {
-      try {
-        const d = await getUsage();
-        const result: any = {
-          membership: d.level,
-          subType: d.subType,
-          fiveHour: {
-            used: d.fiveHourUsed,
-            limit: d.fiveHourLimit,
-            remaining: Math.max(0, d.fiveHourLimit - d.fiveHourUsed),
-            resetsIn: humanDuration(d.fiveHourResetMs - Date.now()),
-          },
-          weekly: {
-            used: d.weekUsed,
-            limit: d.weekLimit,
-            remaining: Math.max(0, d.weekLimit - d.weekUsed),
-            resetsIn: humanDuration(d.weekResetMs - Date.now()),
-          },
-          monthly: {
-            used: d.monthUsed,
-            limit: d.monthLimit,
-            remaining: Math.max(0, d.monthLimit - d.monthUsed),
-          },
-          parallelLimit: d.parallelLimit,
-        };
-
-        return {
-          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-          details: result,
-        };
-      } catch (err: any) {
-        return { content: [{ type: "text", text: `Error: ${err.message}` }], isError: true };
-      }
-    },
-  });
 }
