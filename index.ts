@@ -141,6 +141,7 @@ export default function (pi: ExtensionAPI) {
   let apiKey = "";
   let usage: UsageData | null = null;
   let footerOn = false;
+  let footerGeneration = 0;
   let _tui: any = null;
   let thinkingLevel = "off";
 
@@ -155,12 +156,12 @@ export default function (pi: ExtensionAPI) {
     const p = ctx.model?.provider?.toLowerCase() ?? "";
     return p.includes("kimi") || p.includes("moonshot");
   }
+  function requestRenderSafe(tui: any): void {
+    try { tui?.requestRender?.(); } catch { /* footer may already be disposed */ }
+  }
+
   function trigger() {
-    // Re-check _tui inside the callback: footer may be disposed (setting _tui = null)
-    // between scheduling and execution. `?.` on _tui itself prevents the null deref.
-    setTimeout(() => {
-      try { _tui?.requestRender?.(); } catch { /* footer disposed */ }
-    }, 0);
+    setTimeout(() => requestRenderSafe(_tui), 0);
   }
 
   // ── Refresh ─────────────────────────────────────────────────
@@ -174,9 +175,9 @@ export default function (pi: ExtensionAPI) {
   }
 
   // ── Footer ──────────────────────────────────────────────────
-  function toggleFooter(ctx: any) {
+  function toggleFooter(ctx: any, force = false) {
     if (isKimi(ctx) && apiKey) {
-      if (!footerOn) {
+      if (!footerOn || force) {
         ctx.ui.setFooter(buildFooter(ctx));
         footerOn = true;
       }
@@ -190,11 +191,20 @@ export default function (pi: ExtensionAPI) {
   }
 
   function buildFooter(ctx: any) {
+    const generation = ++footerGeneration;
     return (tui: any, theme: any, fd: any) => {
       _tui = tui;
-      const unsub = fd.onBranchChange(() => tui.requestRender());
+      const unsub = fd.onBranchChange(() => {
+        if (generation === footerGeneration) requestRenderSafe(tui);
+      });
       return {
-        dispose: () => { unsub(); _tui = null; },
+        dispose: () => {
+          try { unsub(); } catch { /* already disposed */ }
+          if (generation === footerGeneration) {
+            _tui = null;
+            footerOn = false;
+          }
+        },
         invalidate() {},
         render(width: number): string[] {
           const sm = ctx.sessionManager;
@@ -291,11 +301,11 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_e, ctx) => {
     apiKey = readApiKey();
     thinkingLevel = pi.getThinkingLevel?.() || "off";
-    toggleFooter(ctx);
+    toggleFooter(ctx, true);
     if (apiKey) refresh(ctx);
   });
 
-  pi.on("model_select", async (_e, ctx) => { toggleFooter(ctx); if (apiKey) refresh(ctx); });
+  pi.on("model_select", async (_e, ctx) => { toggleFooter(ctx, true); if (apiKey) refresh(ctx); });
   pi.on("thinking_level_select", async (event: any) => { thinkingLevel = event.level || "off"; trigger(); });
   pi.on("agent_end", async (_e, ctx) => { if (apiKey) refresh(ctx); });
 
