@@ -39,16 +39,8 @@ When using a Kimi model, the footer shows:
 
 - **5h window**: Rolling frequency limit — even with quota left, bursting too many requests in 5 hours triggers throttling.
 - **Weekly quota**: Main subscription quota, auto-refreshes every 7 days from subscription date. Unused quota does not accumulate.
-- **Monthly total**: Account-level shared pool. Shown in `/kimi` and the `kimi_usage` tool (the API does not expose its reset time).
+- **Monthly total**: Account-level shared pool. Shown in `/kimi` (the API does not expose its reset time).
 - **Parallel**: Max concurrent requests (shown in `/kimi`).
-
-## Tool: kimi_usage
-
-The extension also registers a `kimi_usage` tool that the AI can call:
-
-```
-Check Kimi membership usage (5h window, weekly & monthly quota)
-```
 
 ## API
 
