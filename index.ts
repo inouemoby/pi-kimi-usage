@@ -144,7 +144,7 @@ export default function (pi: ExtensionAPI) {
   let footerGeneration = 0;
   let _tui: any = null;
   let thinkingLevel = "off";
-  const IDLE_REFRESH_MS = 5 * 60 * 1000;  // 闲时定时刷新: 5 分钟
+  const IDLE_REFRESH_MS = 30 * 60 * 1000;  // 闲时定时刷新: 30 分钟
   let latestCtx: any = null;              // 最近一次事件拿到的 ctx,供定时器使用
   let agentBusy = false;                  // agent 生成中 = true,定时刷新只在闲时执行
   let idleTimer: ReturnType<typeof setInterval> | null = null;
@@ -319,7 +319,7 @@ export default function (pi: ExtensionAPI) {
     };
   }
 
-  // ── Idle timer (每 5 分钟闲时刷新) ───────────────────────
+  // ── Idle timer (每 30 分钟闲时刷新) ───────────────────────
   function startIdleTimer() {
     stopIdleTimer();
     idleTimer = setInterval(() => {
@@ -356,6 +356,19 @@ export default function (pi: ExtensionAPI) {
     latestCtx = ctx;
     agentBusy = false;
     if (apiKey) refresh(ctx);
+  });
+
+  // 每条 assistant 消息结束 (含工具调用轮次) 都尝试刷新一次, 让单轮很长的任务
+  // 中途也能及时看到用量变化; 同一个 CACHE_MS 窗口内最多发起一次 (含失败重试), 避免过快
+  let lastMidRefreshAt = 0;
+  pi.on("message_end", async (event: any, ctx: any) => {
+    latestCtx = ctx;
+    if (event?.message?.role !== "assistant") return;
+    if (!isKimi(ctx) || !apiKey) return;
+    const now = Date.now();
+    if (now - lastMidRefreshAt < CACHE_MS) return;
+    lastMidRefreshAt = now;
+    refresh(ctx);
   });
 
   pi.on("model_select", async (_e, ctx) => {
